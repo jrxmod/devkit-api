@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "devkit-networking",
+  "version": "${version}",
+  "name": "DevKit API - Networking",
+  "environment": "*",
+  "entrypoints": {},
+  "depends": { "fabricloader": ">=0.16.0", "minecraft": "1.21.x", "java": ">=21" },
+  "custom": { "devkit:module": true }
+}

@@ -1,0 +1,5 @@
+// DevKit API – components module
+// Author: jrxmod
+base {
+    archivesName = "devkit-components"
+}

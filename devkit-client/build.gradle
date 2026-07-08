@@ -1,0 +1,5 @@
+// DevKit API – client module
+// Author: jrxmod
+base {
+    archivesName = "devkit-client"
+}

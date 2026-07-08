@@ -1,0 +1,56 @@
+base {
+    archivesName = "devkit-api-fabric"
+}
+
+dependencies {
+    // all submodules wired in root build.gradle
+}
+
+processResources {
+    inputs.property "version", project.version
+    inputs.property "minecraft_version", project.minecraft_version
+    inputs.property "loader_version", project.loader_version
+
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version,
+               "minecraft_version": project.minecraft_version,
+               "loader_version": project.loader_version
+    }
+}
+
+jar {
+    // Exclude fabric.mod.json from all submodule contributions to
+    // avoid duplicate-resource collisions; the canonical
+    // fabric.mod.json comes from devkit-fabric/src/main/resources/.
+    from(project(':devkit-core').sourceSets.main.output) {
+        exclude 'fabric.mod.json'
+    }
+    from(project(':devkit-registry').sourceSets.main.output) {
+        exclude 'fabric.mod.json'
+    }
+    from(project(':devkit-networking').sourceSets.main.output) {
+        exclude 'fabric.mod.json'
+    }
+    from(project(':devkit-components').sourceSets.main.output) {
+        exclude 'fabric.mod.json'
+    }
+    from(project(':devkit-config').sourceSets.main.output) {
+        exclude 'fabric.mod.json'
+    }
+    from(project(':devkit-client').sourceSets.main.output) {
+        exclude 'fabric.mod.json'
+    }
+    from(project(':devkit-datagen').sourceSets.main.output) {
+        exclude 'fabric.mod.json'
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    manifest {
+        attributes(
+            'Implementation-Title': project.name,
+            'Implementation-Version': project.version,
+            'Implementation-Vendor': 'jrxmod'
+        )
+    }
+}

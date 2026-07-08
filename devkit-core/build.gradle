@@ -1,0 +1,6 @@
+// DevKit API – core module
+// Author: jrxmod
+// All configuration inherited from root project.
+base {
+    archivesName = "devkit-core"
+}

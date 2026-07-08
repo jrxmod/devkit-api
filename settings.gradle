@@ -1,0 +1,21 @@
+pluginManagement {
+    repositories {
+        maven {
+            name = 'Fabric'
+            url = 'https://maven.fabricmc.net/'
+        }
+        gradlePluginPortal()
+    }
+}
+
+rootProject.name = 'devkit-api'
+
+include 'devkit-core'
+include 'devkit-registry'
+include 'devkit-networking'
+include 'devkit-components'
+include 'devkit-config'
+include 'devkit-datagen'
+include 'devkit-client'
+// Aggregator / empty main mod that pulls all modules
+include 'devkit-fabric'

@@ -1,0 +1,5 @@
+// DevKit API – datagen module
+// Author: jrxmod
+base {
+    archivesName = "devkit-datagen"
+}

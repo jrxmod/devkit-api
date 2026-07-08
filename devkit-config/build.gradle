@@ -1,0 +1,5 @@
+// DevKit API – config module
+// Author: jrxmod
+base {
+    archivesName = "devkit-config"
+}

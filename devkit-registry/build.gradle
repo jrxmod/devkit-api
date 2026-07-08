@@ -1,0 +1,5 @@
+// DevKit API – registry module
+// Author: jrxmod
+base {
+    archivesName = "devkit-registry"
+}

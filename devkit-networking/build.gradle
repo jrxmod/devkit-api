@@ -1,0 +1,5 @@
+// DevKit API – networking module
+// Author: jrxmod
+base {
+    archivesName = "devkit-networking"
+}

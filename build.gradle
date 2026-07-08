@@ -1,0 +1,152 @@
+plugins {
+    id 'fabric-loom' version "${loom_version}" apply false
+}
+
+// Expose gradle.properties values as project ext properties so that
+// subproject build scripts can reference them through the standard
+// property accessors (project.minecraft_version, etc.). Without
+// this, submodules' processResources cannot resolve placeholders
+// such as ${minecraft_version} or ${loader_version}.
+ext.minecraft_version = minecraft_version
+ext.loader_version = loader_version
+ext.mod_version = mod_version
+ext.fabric_version = fabric_version
+ext.loom_version = loom_version
+ext.yarn_mappings = yarn_mappings
+
+allprojects {
+    apply plugin: 'maven-publish'
+    group = project.maven_group ?: 'io.github.jrxmod.devkit'
+    version = "${mod_version}"
+
+    repositories {
+        mavenCentral()
+        maven { url 'https://maven.fabricmc.net/' }
+        maven { url 'https://maven.modrinth.com/' }
+    }
+}
+
+subprojects {
+    apply plugin: 'fabric-loom'
+    apply plugin: 'maven-publish'
+
+    loom {
+        splitEnvironmentSourceSets()
+        mods {
+            "${project.name}" {
+                sourceSet sourceSets.main
+                sourceSet sourceSets.client
+            }
+        }
+    }
+
+    // Substitute placeholders inside submodule fabric.mod.json.
+    // Loader and minecraft versions are inherited from the root
+    // gradle.properties via rootProject.ext, which is exposed through
+    // the `rootProject` delegate inside subproject scripts.
+    processResources {
+        filesMatching('fabric.mod.json') {
+            expand version: project.version,
+                   minecraft_version: project.minecraft_version,
+                   loader_version: project.loader_version
+        }
+    }
+
+    dependencies {
+        minecraft "com.mojang:minecraft:${project.minecraft_version}"
+        mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+        modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+        modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+        implementation "io.github.llamalad7:mixinextras-fabric:0.5.0"
+    }
+
+    java {
+        withSourcesJar()
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        it.options.encoding = "UTF-8"
+        it.options.release = 21
+    }
+
+    publishing {
+        publications {
+            maven(MavenPublication) {
+                from components.java
+                pom {
+                    name = "DevKit API - ${project.name}"
+                    description = "Modular Fabric API library for Minecraft 1.21.x mod development / Модульная API-библиотека для Fabric"
+                    url = "https://github.com/jrxmod/devkit-api"
+                    licenses {
+                        license {
+                            name = 'Apache-2.0'
+                            url = 'https://www.apache.org/licenses/LICENSE-2.0'
+                        }
+                    }
+                    developers {
+                        developer {
+                            id = 'jrxmod'
+                            name = 'jrxmod'
+                            url = 'https://github.com/jrxmod'
+                        }
+                    }
+                    scm {
+                        connection = 'scm:git:git://github.com/jrxmod/devkit-api.git'
+                        developerConnection = 'scm:git:ssh://github.com/jrxmod/devkit-api.git'
+                        url = 'https://github.com/jrxmod/devkit-api'
+                    }
+                }
+            }
+        }
+    }
+}
+
+project(':devkit-registry') {
+    dependencies {
+        api project(':devkit-core')
+    }
+}
+project(':devkit-networking') {
+    dependencies {
+        api project(':devkit-core')
+    }
+}
+project(':devkit-components') {
+    dependencies {
+        api project(':devkit-core')
+        api project(':devkit-registry')
+        api project(':devkit-networking')
+    }
+}
+project(':devkit-config') {
+    dependencies {
+        api project(':devkit-core')
+        api project(':devkit-networking')
+    }
+}
+project(':devkit-client') {
+    dependencies {
+        api project(':devkit-core')
+        api project(':devkit-networking')
+    }
+}
+project(':devkit-datagen') {
+    dependencies {
+        api project(':devkit-core')
+        api project(':devkit-registry')
+        api project(':devkit-components')
+    }
+}
+project(':devkit-fabric') {
+    dependencies {
+        api project(':devkit-core')
+        api project(':devkit-registry')
+        api project(':devkit-networking')
+        api project(':devkit-components')
+        api project(':devkit-config')
+        api project(':devkit-client')
+        api project(':devkit-datagen')
+    }
+}
