@@ -4,6 +4,7 @@ pluginManagement {
             name = 'Fabric'
             url = 'https://maven.fabricmc.net/'
         }
+        mavenCentral()
         gradlePluginPortal()
     }
 }
@@ -17,5 +18,5 @@ include 'devkit-components'
 include 'devkit-config'
 include 'devkit-datagen'
 include 'devkit-client'
-// Aggregator / empty main mod that pulls all modules
 include 'devkit-fabric'
+include 'devkit-testmod-example'

@@ -1,97 +1,132 @@
 # DevKit API
-**by jrxmod**
 
-Modular Fabric API library — Minecraft 1.21.1 LTS & 1.21.8 / 1.21.11
+**DevKit API** by **jrxmod** is a small developer library for Fabric mods. It does not add gameplay content by itself.
 
-Apache-2.0 • Java 21 • Fabric Loader ≥0.19.3
+> Current development release: `0.2.0-alpha.1` for Minecraft 1.21.1.
+>
+> Java 21 · Fabric Loader 0.19.3 · Apache-2.0
 
----
+## Features
 
-## 🇷🇺 Что это?
+- **Registry Kit** — ordered typed registration through `KRegister`.
+- **Payload networking** — validated S2C/C2S packet registration and send helpers.
+- **Data Components** — fluent `ComponentType` builder for Minecraft 1.21+.
+- **Synced JSON config** — optional server-authoritative config synchronization.
+- **Datagen helpers** — base providers for models, tags and block loot tables.
 
-**DevKit API** — это библиотека-помощник для разработчиков Fabric-модов. Сама по себе она не добавляет контент в игру. Её ставят как зависимость другие моды.
+The API is alpha software. Public signatures may still change before 1.0.
 
-Помогает решить 4 главные боли 1.21.x:
+## Development dependency
 
-1. **Registry Kit** — регистрация блоков/предметов/энтити в 2 строки через `KRegister`
-2. **Auto-Networking** — `@AutoPacket` → автоматическая регистрация Payload S2C/C2S, без ручного ByteBuf
-3. **Data Components 1.21+** — fluent билдер для `DataComponentType`, авто-sync
-4. **Config Sync** — `@SyncedConfig`, сервер-авторитативный конфиг, авто S2C
+Until a Maven repository is announced, use a local Maven publication:
 
-Размер jar: **<350 KB**, zero внешних зависимостей (только Fabric API).
-
-## 🇬🇧 What is it?
-
-**DevKit API** is a lightweight developer toolkit for Fabric 1.21.x modders.
-
-- Fluent Registry Kit (`KRegister`)
-- Auto-Networking (`@AutoPacket`)
-- Data Components helpers for 1.21+
-- Server-authoritative Synced Config
-
-No gameplay content — pure library.
-
----
-
-## Modules / Модули
-
-```
-io.github.jrxmod.devkit:devkit-core:0.1.0+1.21.1
-io.github.jrxmod.devkit:devkit-registry
-io.github.jrxmod.devkit:devkit-networking
-io.github.jrxmod.devkit:devkit-components
-io.github.jrxmod.devkit:devkit-config
-io.github.jrxmod.devkit:devkit-client
-io.github.jrxmod.devkit:devkit-datagen
-io.github.jrxmod.devkit:devkit-fabric   // all-in-one
+```bash
+./gradlew publishToMavenLocal
 ```
 
-### Gradle
 ```gradle
 repositories {
-    maven { url "https://maven.modrinth.com" }
+    mavenLocal()
+    maven { url = "https://maven.fabricmc.net/" }
 }
+
 dependencies {
-    modImplementation "io.github.jrxmod.devkit:devkit-fabric:0.1.0+1.21.1"
+    modImplementation "io.github.jrxmod.devkit:devkit-fabric:0.2.0-alpha.1+1.21.1"
 }
 ```
 
-## Quick start / Быстрый старт
+For an all-in-one runtime installation, use the `devkit-api` JAR produced by the `devkit-fabric` module.
+
+## Quick start
+
+### Registry
 
 ```java
-// Registry
-public class MyItems {
-  public static final KRegister<Item> ITEMS = KRegister.create("mymod", Registries.ITEM);
-  public static final RegistrySupplier<Item> RUBY = ITEMS.register("ruby",
-    () -> new Item(new Item.Settings()));
-}
+public static final KRegister<Item> ITEMS =
+        KRegister.create("mymod", RegistryKeys.ITEM);
 
-// Data Component 1.21+
-public static final DataComponentType<Integer> CHARGE =
-  Components.intComponent("charge").persistent().build();
+public static final RegistrySupplier<Item> RUBY =
+        ITEMS.register("ruby", () -> new Item(new Item.Settings()));
 
-// Auto packet
-@AutoPacket(value = "sync_charge", direction = AutoPacket.Direction.S2C)
-public record ChargeSyncPacket(BlockPos pos, int charge) implements SyncedPacket {}
-
-// Config
-@SyncedConfig("mymod")
-public class MyConfig {
-  public int maxCharge = 100;
+@Override
+public void onInitialize() {
+    ITEMS.bootstrap(Registries.ITEM);
 }
 ```
 
-## Версии / Versions
+Do not access `RUBY.get()` before `bootstrap` completes.
 
-- **1.21.1 LTS** — Fabric API 0.116.13+1.21.1 — основная ветка
-- **1.21.8** — Fabric API 0.136.1+1.21.8
-- **1.21.11** — Fabric API 0.141.4+1.21.11
+### Data Component
 
-Dual-branch релизы, semver: `0.1.0+1.21.1`
+```java
+public static final ComponentType<Integer> ENERGY =
+        Components.intComponent("mymod", "energy")
+                .cache()
+                .buildAndRegister();
+```
 
-## Автор / Author
-- **jrxmod**
-- GitHub: https://github.com/jrxmod/devkit-api
-- Modrinth: https://modrinth.com/mod/devkit-api
-- CurseForge: https://www.curseforge.com/minecraft/mc-mods/devkit-api
-- License: Apache-2.0
+### Network payload
+
+```java
+@AutoPacket(value = "mymod:energy_sync", direction = AutoPacket.Direction.S2C)
+public record EnergySync(int energy) implements SyncedPacket {
+    public static final CustomPayload.Id<EnergySync> ID =
+            new CustomPayload.Id<>(Identifier.of("mymod", "energy_sync"));
+
+    public static final PacketCodec<RegistryByteBuf, EnergySync> CODEC =
+            PacketCodec.tuple(PacketCodecs.VAR_INT, EnergySync::energy, EnergySync::new);
+
+    @Override
+    public Id<? extends CustomPayload> getId() {
+        return ID;
+    }
+}
+
+// Common initialization, before a connection is established:
+AutoPacketRegistry.register(EnergySync.class);
+```
+
+Server send:
+
+```java
+DevkitNetworking.sendToPlayer(player, new EnergySync(100));
+```
+
+Client-to-server payloads are sent from client-only code through `DevkitClientNetworking`.
+
+### Synced config
+
+```java
+@SyncedConfig("mymod")
+public final class MyConfig {
+    public int maxEnergy = 10_000;
+}
+
+MyConfig config = ConfigManager.loadOrCreate(MyConfig.class, "mymod", "main");
+```
+
+The synchronization key in this example is `mymod:main`. To resend after a reload:
+
+```java
+ConfigSyncManager.broadcastToAll(server, "mymod:main");
+```
+
+## Build
+
+```bash
+./gradlew clean build
+```
+
+The development integration mod is included as `devkit-testmod-example` and is compiled with the main project.
+
+## Version plan
+
+1. Stabilize and test Minecraft 1.21.1.
+2. Add a separate 1.21.11 build.
+3. Port to Minecraft 26.2 / Java 25 using the unobfuscated Fabric toolchain.
+
+Each Minecraft line will receive its own JAR; the project will remain in a single Git branch.
+
+## License
+
+Copyright 2026 jrxmod. Licensed under Apache-2.0.

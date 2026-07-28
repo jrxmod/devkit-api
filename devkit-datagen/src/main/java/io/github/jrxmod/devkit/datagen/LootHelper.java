@@ -1,48 +1,50 @@
 package io.github.jrxmod.devkit.datagen;
 
+import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
+import net.fabricmc.fabric.api.datagen.v1.provider.FabricBlockLootTableProvider;
 import net.minecraft.block.Block;
-import net.minecraft.data.server.loottable.BlockLootTableGenerator;
-import net.minecraft.loot.LootTable;
+import net.minecraft.item.ItemConvertible;
+import net.minecraft.registry.RegistryWrapper;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
- * Loot table generation utilities.
- * <p>
- * Provides concise wrappers around vanilla
- * {@link BlockLootTableGenerator} methods frequently used
- * in content mods.
+ * Base provider exposing concise wrappers around vanilla's protected block
+ * loot-table helpers.
  *
- * @author jrxmod
- * @since 0.1.0
+ * <pre>{@code
+ * public final class MyLoot extends LootHelper {
+ *     public MyLoot(FabricDataOutput output,
+ *                   CompletableFuture<RegistryWrapper.WrapperLookup> registries) {
+ *         super(output, registries);
+ *     }
+ *
+ *     public void generate() {
+ *         dropsSelf(ModBlocks.RUBY_BLOCK);
+ *     }
+ * }
+ * }</pre>
  */
-public final class LootHelper {
-    private LootHelper() {}
-
-    /**
-     * Functional interface used by DevKit datagen providers
-     * to reduce anonymous class boilerplate.
-     */
-    @FunctionalInterface
-    public interface BlockLootFactory {
-        /**
-         * Creates a loot table builder for the given block.
-         *
-         * @param block target block
-         * @return loot table builder
-         */
-        LootTable.Builder create(Block block);
+public abstract class LootHelper extends FabricBlockLootTableProvider {
+    protected LootHelper(FabricDataOutput output,
+                         CompletableFuture<RegistryWrapper.WrapperLookup> registries) {
+        super(output, registries);
     }
 
-    /**
-     * Standard drop-self loot table.
-     * Intended for method reference usage:
-     * {@code LootHelper::dropsSelf}
-     *
-     * @param block block instance - caller must supply via wrapper
-     * @return null – placeholder for future fluent API
-     */
-    public static LootTable.Builder dropsSelf(Block block) {
-        // Implemented by caller via BlockLootTableGenerator.addDrop(block)
-        // Retained as typed marker for future DSL expansion.
-        return null;
+    /** Adds normal self-drop tables for all supplied blocks. */
+    protected final void dropsSelf(Block... blocks) {
+        for (Block block : blocks) {
+            addDrop(block);
+        }
+    }
+
+    /** Adds a table where breaking {@code block} drops another item or block. */
+    protected final void dropsAs(Block block, ItemConvertible drop) {
+        addDrop(block, drop);
+    }
+
+    /** Adds a silk-touch-only drop table. */
+    protected final void dropsWithSilkTouch(Block block) {
+        addDropWithSilkTouch(block);
     }
 }

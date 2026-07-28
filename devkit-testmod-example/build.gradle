@@ -1,0 +1,28 @@
+base {
+    archivesName = "devkit-testmod-example"
+}
+
+dependencies {
+    implementation project(path: ':devkit-fabric', configuration: 'namedElements')
+    productionRuntimeMods "net.fabricmc.fabric-api:fabric-api:${rootProject.property('fabric_version')}"
+}
+
+tasks.register('prodServer', net.fabricmc.loom.task.prod.ServerProductionRunTask) {
+    dependsOn project(':devkit-fabric').tasks.named('remapJar')
+    mods.from project(':devkit-fabric').tasks.named('remapJar')
+    installerVersion = '1.0.3'
+    runDir = rootProject.file('run-prod-server')
+    programArgs.add('nogui')
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+tasks.register('prodClient', net.fabricmc.loom.task.prod.ClientProductionRunTask) {
+    dependsOn project(':devkit-fabric').tasks.named('remapJar')
+    mods.from project(':devkit-fabric').tasks.named('remapJar')
+    runDir = rootProject.file('run-prod-client')
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}

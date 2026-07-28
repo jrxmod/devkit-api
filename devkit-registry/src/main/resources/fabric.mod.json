@@ -4,7 +4,11 @@
   "version": "${version}",
   "name": "DevKit API - Registry",
   "environment": "*",
-  "entrypoints": {},
-  "depends": { "fabricloader": ">=0.16.0", "minecraft": "1.21.x", "java": ">=21", "devkit-core": "*" },
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "minecraft": "${minecraft_version}",
+    "java": ">=21",
+    "devkit-core": "*"
+  },
   "custom": { "devkit:module": true }
 }

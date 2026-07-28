@@ -1,42 +1,40 @@
 # Gradle
 .gradle/
-build/
+**/build/
 out/
 bin/
 run/
 remappedSrc/
 remap*
 
-# IDEA
+# IDEs
 .idea/
 *.iml
 *.ipr
 *.iws
-/out/
-
-# VSCode
 .vscode/
 .settings/
 .classpath
 .project
 
-# Minecraft
-run/
-logs/
-crash-reports/
-screenshots/
-config/
-mods/
-saves/
-local/
+# Minecraft runtime data (root project only)
+/config/
+/logs/
+/crash-reports/
+/screenshots/
+/mods/
+/saves/
+/local/
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Publishing
+# Publishing and credentials
 *.key
 secrets.properties
 
-# Private
+# Private workspace
 .private/
+
+/run-prod-*/

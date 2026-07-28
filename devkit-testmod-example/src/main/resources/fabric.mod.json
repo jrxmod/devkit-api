@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "devkit-testmod",
+  "version": "${version}",
+  "name": "DevKit API Test Mod",
+  "description": "Development-only integration test for DevKit API",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["io.github.jrxmod.testmod.TestMod"]
+  },
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}",
+    "java": ">=21",
+    "devkit-api": "*"
+  },
+  "custom": { "devkit:testmod": true }
+}

@@ -2,55 +2,29 @@
   "schemaVersion": 1,
   "id": "devkit-api",
   "version": "${version}",
-
   "name": "DevKit API",
-  "description": "Modular Fabric API library for Minecraft 1.21.x – Registry Kit, Auto-Networking, Data Components helpers. / Модульная API-библиотека для разработчиков Fabric-модов.",
-  "authors": [
-    "jrxmod"
-  ],
+  "description": "Modular developer library for Fabric mods: registry, payload networking, data components, synchronized JSON configs, and datagen helpers.",
+  "authors": ["jrxmod"],
   "contact": {
-    "homepage": "https://modrinth.com/mod/devkit-api",
     "sources": "https://github.com/jrxmod/devkit-api",
-    "issues": "https://github.com/jrxmod/devkit-api/issues",
-    "discord": "https://discord.gg/"
+    "issues": "https://github.com/jrxmod/devkit-api/issues"
   },
-
   "license": "Apache-2.0",
   "icon": "assets/devkit-api/icon.png",
-
   "environment": "*",
   "entrypoints": {
-    "main": [
-      "io.github.jrxmod.devkit.fabric.DevkitMod"
-    ],
-    "client": [
-      "io.github.jrxmod.devkit.fabric.client.DevkitClient"
-    ],
-    "fabric-datagen": [
-      "io.github.jrxmod.devkit.datagen.DevkitDataGenerator"
-    ]
+    "main": ["io.github.jrxmod.devkit.fabric.DevkitMod"],
+    "client": ["io.github.jrxmod.devkit.fabric.client.DevkitClient"],
+    "fabric-datagen": ["io.github.jrxmod.devkit.datagen.DevkitDataGenerator"]
   },
-  "mixins": [
-    "devkit-api.mixins.json",
-    {
-      "config": "devkit-api.client.mixins.json",
-      "environment": "client"
-    }
-  ],
-
   "depends": {
     "fabricloader": ">=${loader_version}",
     "fabric-api": "*",
     "minecraft": "${minecraft_version}",
     "java": ">=21"
   },
-  "suggests": {
-    "cloth-config": ">=15.0.0",
-    "modmenu": "*"
-  },
   "custom": {
-    "devkit:api_version": 1,
-    "modmenu:api": true,
+    "devkit:api_version": 2,
     "modmenu:badges": ["library"]
   }
 }

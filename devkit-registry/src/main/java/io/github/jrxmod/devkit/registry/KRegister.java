@@ -5,25 +5,17 @@ import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.util.Identifier;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
- * Fluent registry container for Fabric 1.21.x.
- * <p>
- * Eliminates repetitive registry boilerplate by collecting suppliers
- * during mod construction and bootstrapping them at the appropriate
- * registry entrypoint.
- * <p>
- * Example:
- * <pre>{@code
- * public static final KRegister<Item> ITEMS = KRegister.create("mymod", Registries.ITEM);
- * public static final RegistrySupplier<Item> RUBY = ITEMS.register("ruby",
- *     () -> new Item(new Item.Settings()));
- * }</pre>
+ * Ordered, type-safe container for deferred vanilla registry entries.
+ *
+ * <p>Create it with a key from {@code RegistryKeys}, declare entries, then call
+ * {@link #bootstrap(Registry)} during the owning mod's common initializer.</p>
  *
  * @param <T> registry value type
  * @author jrxmod
@@ -32,103 +24,94 @@ import java.util.function.Supplier;
 public final class KRegister<T> {
     private final String modId;
     private final RegistryKey<Registry<T>> registryKey;
-    private final Map<Identifier, Supplier<? extends T>> entries = new LinkedHashMap<>();
-    private final List<RegistrySupplier<T>> holders = new ArrayList<>();
-    private boolean frozen = false;
+    private final Map<Identifier, PendingEntry<T>> entries = new LinkedHashMap<>();
+    private State state = State.OPEN;
 
     private KRegister(String modId, RegistryKey<Registry<T>> registryKey) {
+        if (modId == null || !modId.matches("[a-z0-9_.-]+")) {
+            throw new IllegalArgumentException("Invalid mod id: " + modId);
+        }
         this.modId = modId;
-        this.registryKey = registryKey;
+        this.registryKey = Objects.requireNonNull(registryKey, "registryKey");
         DevkitRegistry.track(this);
     }
 
-    /**
-     * Creates a new typed registry container.
-     *
-     * @param modId mod namespace
-     * @param registryKey target registry key
-     * @param <T> value type
-     * @return new register instance
-     */
     public static <T> KRegister<T> create(String modId, RegistryKey<Registry<T>> registryKey) {
         return new KRegister<>(modId, registryKey);
     }
 
-    /**
-     * Registers a new entry.
-     *
-     * @param path  registry path (no namespace)
-     * @param supplier value factory, invoked once during bootstrap
-     * @return typed holder providing lazy access
-     * @throws IllegalStateException if the register has already been bootstrapped
-     */
-    public RegistrySupplier<T> register(String path, Supplier<? extends T> supplier) {
-        if (frozen) {
-            throw new IllegalStateException("KRegister " + modId + ":" + registryKey.getValue() + " is already frozen");
+    public synchronized RegistrySupplier<T> register(String path, Supplier<? extends T> supplier) {
+        if (state != State.OPEN) {
+            throw new IllegalStateException("KRegister " + modId + " for " + registryKey.getValue()
+                    + " is already being bootstrapped or frozen");
         }
+        Objects.requireNonNull(supplier, "supplier");
         Identifier id = Identifier.of(modId, path);
         if (entries.containsKey(id)) {
             throw new IllegalArgumentException("Duplicate registration: " + id);
         }
-        entries.put(id, supplier);
         RegistrySupplier<T> holder = new RegistrySupplier<>(id);
-        holders.add(holder);
+        entries.put(id, new PendingEntry<>(supplier, holder));
         return holder;
     }
 
     /**
-     * Bootstraps all collected entries into the target registry.
-     * Safe to call multiple times – subsequent calls are ignored.
-     *
-     * @param registry target live registry instance
+     * Registers all pending values. Successfully registered entries remain
+     * bound if a later supplier fails, and a retry skips those entries.
      */
-    public void bootstrap(Registry<T> registry) {
-        if (frozen) return;
-        int count = 0;
-        for (Map.Entry<Identifier, Supplier<? extends T>> e : entries.entrySet()) {
-            T value = e.getValue().get();
-            Registry.register(registry, e.getKey(), value);
-            // inject into corresponding holder
-            holders.stream()
-                .filter(h -> h.getId().equals(e.getKey()))
-                .findFirst()
-                .ifPresent(h -> h.bind(value));
-            count++;
+    public synchronized void bootstrap(Registry<T> registry) {
+        Objects.requireNonNull(registry, "registry");
+        if (state == State.FROZEN) {
+            return;
         }
-        frozen = true;
-        DevkitCore.LOGGER.debug("KRegister bootstrap: {} -> {} entries", registryKey.getValue(), count);
+        if (state == State.BOOTSTRAPPING) {
+            throw new IllegalStateException("Recursive bootstrap for " + registryKey.getValue());
+        }
+
+        state = State.BOOTSTRAPPING;
+        int registered = 0;
+        try {
+            for (Map.Entry<Identifier, PendingEntry<T>> entry : entries.entrySet()) {
+                PendingEntry<T> pending = entry.getValue();
+                if (pending.holder().isPresent()) {
+                    continue;
+                }
+                T value = Objects.requireNonNull(pending.factory().get(),
+                        "Registry supplier returned null for " + entry.getKey());
+                Registry.register(registry, entry.getKey(), value);
+                pending.holder().bind(value);
+                registered++;
+            }
+            state = State.FROZEN;
+            DevkitCore.LOGGER.debug("KRegister bootstrap: {} -> {} new entries", registryKey.getValue(), registered);
+        } catch (RuntimeException e) {
+            state = State.OPEN;
+            throw new IllegalStateException("Failed to bootstrap registry " + registryKey.getValue()
+                    + " for " + modId, e);
+        }
     }
 
-    /**
-     * @return registry key backing this container
-     */
     public RegistryKey<Registry<T>> getRegistryKey() {
         return registryKey;
     }
 
-    /**
-     * @return owning mod namespace
-     */
     public String getModId() {
         return modId;
     }
 
-    /**
-     * @return immutable entry holders
-     */
-    public List<RegistrySupplier<T>> getEntries() {
-        return List.copyOf(holders);
+    public synchronized List<RegistrySupplier<T>> getEntries() {
+        return entries.values().stream().map(PendingEntry::holder).toList();
     }
 
-    /**
-     * @return true if bootstrap() has been invoked
-     */
-    public boolean isFrozen() {
-        return frozen;
+    public synchronized boolean isFrozen() {
+        return state == State.FROZEN;
     }
 
-    // internal – used by DevkitRegistry auto-bootstrap
-    Map<Identifier, Supplier<? extends T>> getRawEntries() {
-        return entries;
+    private record PendingEntry<T>(Supplier<? extends T> factory, RegistrySupplier<T> holder) {}
+
+    private enum State {
+        OPEN,
+        BOOTSTRAPPING,
+        FROZEN
     }
 }

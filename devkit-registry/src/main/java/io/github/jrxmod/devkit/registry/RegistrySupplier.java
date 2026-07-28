@@ -3,70 +3,50 @@ package io.github.jrxmod.devkit.registry;
 import net.minecraft.util.Identifier;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Supplier;
 
-/**
- * Type-safe lazy holder for registry entries created via {@link KRegister}.
- * <p>
- * The underlying value is bound during registry bootstrap and remains
- * constant afterwards.
- *
- * @param <T> registry value type
- * @author jrxmod
- * @since 0.1.0
- */
-public class RegistrySupplier<T> implements Supplier<T> {
+/** Lazy typed reference bound once by {@link KRegister#bootstrap}. */
+public final class RegistrySupplier<T> implements Supplier<T> {
     private final Identifier id;
     private volatile T value;
 
-    /**
-     * Creates a new unbound holder.
-     *
-     * @param id registry identifier
-     */
-    public RegistrySupplier(Identifier id) {
+    RegistrySupplier(Identifier id) {
         this.id = Objects.requireNonNull(id, "id");
     }
 
-    /**
-     * Internal binding invoked by {@link KRegister} during bootstrap.
-     *
-     * @param value resolved registry object
-     */
-    void bind(T value) {
+    synchronized void bind(T value) {
+        Objects.requireNonNull(value, "value");
+        if (this.value != null && this.value != value) {
+            throw new IllegalStateException("Registry object " + id + " is already bound");
+        }
         this.value = value;
     }
 
-    /**
-     * Returns the bound registry object.
-     *
-     * @return registry value
-     * @throws IllegalStateException if accessed before bootstrap
-     */
     @Override
     public T get() {
-        if (value == null) {
-            throw new IllegalStateException("Registry object " + id + " accessed before bootstrap – ensure KRegister.bootstrap() has run");
+        T current = value;
+        if (current == null) {
+            throw new IllegalStateException("Registry object " + id
+                    + " was accessed before KRegister.bootstrap()");
         }
-        return value;
+        return current;
     }
 
-    /**
-     * @return registry identifier
-     */
+    public Optional<T> optional() {
+        return Optional.ofNullable(value);
+    }
+
     public Identifier getId() {
         return id;
     }
 
-    /**
-     * @return true if the holder has been bound
-     */
     public boolean isPresent() {
         return value != null;
     }
 
     @Override
     public String toString() {
-        return "RegistrySupplier[" + id + (value != null ? "=" + value.getClass().getSimpleName() : ", unbound") + "]";
+        return "RegistrySupplier[" + id + (value == null ? ", unbound" : ", bound") + ']';
     }
 }
