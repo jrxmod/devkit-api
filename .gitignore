@@ -37,4 +37,4 @@ secrets.properties
 # Private workspace
 .private/
 
-/run-prod-*/
+**/run-prod-*/

@@ -9,8 +9,22 @@ permissions:
   contents: read
 
 jobs:
-  build-1-21-1:
+  build:
+    name: Minecraft ${{ matrix.minecraft }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - minecraft: 1.21.1
+            project_dir: .
+            artifact_path: devkit-fabric/build/libs/devkit-api-*.jar
+          - minecraft: 1.21.8
+            project_dir: versions/1.21.8
+            artifact_path: versions/1.21.8/build/devkit-fabric/libs/devkit-api-*.jar
+          - minecraft: 1.21.11
+            project_dir: versions/1.21.11
+            artifact_path: versions/1.21.11/build/devkit-fabric/libs/devkit-api-*.jar
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -21,11 +35,13 @@ jobs:
           java-version: 21
       - name: Set up Gradle and validate wrapper
         uses: gradle/actions/setup-gradle@v6
-      - name: Build and verify
-        run: ./gradlew build --stacktrace --warning-mode=all
+      - name: Build
+        run: ./gradlew -p "${{ matrix.project_dir }}" clean build --stacktrace --warning-mode=all
       - name: Upload distributable
         uses: actions/upload-artifact@v4
         with:
-          name: devkit-api-1.21.1
-          path: devkit-fabric/build/libs/devkit-api-*.jar
+          name: devkit-api-${{ matrix.minecraft }}
+          path: |
+            ${{ matrix.artifact_path }}
+            !**/*-sources.jar
           if-no-files-found: error

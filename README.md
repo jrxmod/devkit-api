@@ -2,9 +2,21 @@
 
 **DevKit API** by **jrxmod** is a small developer library for Fabric mods. It does not add gameplay content by itself.
 
-> Current development release: `0.2.0-alpha.1` for Minecraft 1.21.1.
+> Current development release: `0.2.0-alpha.1` for Minecraft 1.21.x.
 >
 > Java 21 · Fabric Loader 0.19.3 · Apache-2.0
+
+## Supported Minecraft versions
+
+DevKit is built as three separate JARs from one `main` branch:
+
+| Minecraft | Artifact |
+|---|---|
+| 1.21.1 LTS | `devkit-api-0.2.0-alpha.1+1.21.1.jar` |
+| 1.21.8 | `devkit-api-0.2.0-alpha.1+1.21.8.jar` |
+| 1.21.11 | `devkit-api-0.2.0-alpha.1+1.21.11.jar` |
+
+A player or dependent mod should use exactly the JAR matching its Minecraft version. There is no 26.x target planned.
 
 ## Features
 
@@ -18,11 +30,20 @@ The API is alpha software. Public signatures may still change before 1.0.
 
 ## Development dependency
 
-Until a Maven repository is announced, use a local Maven publication:
+Until a Maven repository is announced, publish the required version locally:
 
 ```bash
+# Minecraft 1.21.1
 ./gradlew publishToMavenLocal
+
+# Minecraft 1.21.8
+./gradlew -p versions/1.21.8 publishToMavenLocal
+
+# Minecraft 1.21.11
+./gradlew -p versions/1.21.11 publishToMavenLocal
 ```
+
+Then select the matching version in a dependent mod:
 
 ```gradle
 repositories {
@@ -31,7 +52,7 @@ repositories {
 }
 
 dependencies {
-    modImplementation "io.github.jrxmod.devkit:devkit-fabric:0.2.0-alpha.1+1.21.1"
+    modImplementation "io.github.jrxmod.devkit:devkit-fabric:0.2.0-alpha.1+1.21.8"
 }
 ```
 
@@ -41,13 +62,31 @@ For an all-in-one runtime installation, use the `devkit-api` JAR produced by the
 
 ### Registry
 
+Create the registry container with the key from `RegistryKeys`:
+
 ```java
 public static final KRegister<Item> ITEMS =
         KRegister.create("mymod", RegistryKeys.ITEM);
+```
 
+Minecraft 1.21.1 accepts the simple supplier form:
+
+```java
 public static final RegistrySupplier<Item> RUBY =
         ITEMS.register("ruby", () -> new Item(new Item.Settings()));
+```
 
+Minecraft 1.21.8 and 1.21.11 require the registry key in item and block settings. Use the key-aware factory form:
+
+```java
+public static final RegistrySupplier<Item> RUBY =
+        ITEMS.register("ruby", key ->
+                new Item(new Item.Settings().registryKey(key)));
+```
+
+Bootstrap from the owning mod initializer:
+
+```java
 @Override
 public void onInitialize() {
     ITEMS.bootstrap(Registries.ITEM);
@@ -113,19 +152,24 @@ ConfigSyncManager.broadcastToAll(server, "mymod:main");
 
 ## Build
 
+Build one version:
+
 ```bash
 ./gradlew clean build
+./gradlew -p versions/1.21.8 clean build
+./gradlew -p versions/1.21.11 clean build
 ```
 
-The development integration mod is included as `devkit-testmod-example` and is compiled with the main project.
+Build all versions and collect the all-in-one artifacts:
 
-## Version plan
+```bash
+./gradlew collectReleaseJars
+ls -lh build/releases
+```
 
-1. Stabilize and test Minecraft 1.21.1.
-2. Add a separate 1.21.11 build.
-3. Port to Minecraft 26.2 / Java 25 using the unobfuscated Fabric toolchain.
+Version-specific source replacements live below `versions/<minecraft>/overrides`. Everything else is compiled from the shared module source tree, so fixes do not have to be copied between Git branches.
 
-Each Minecraft line will receive its own JAR; the project will remain in a single Git branch.
+The development integration mod is included as `devkit-testmod-example` and is compiled for every supported version.
 
 ## License
 

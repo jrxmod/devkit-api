@@ -30,6 +30,9 @@ jar {
     from(project(':devkit-datagen').sourceSets.main.output) {
         exclude 'fabric.mod.json'
     }
+    from(project(':devkit-datagen').sourceSets.client.output) {
+        exclude 'fabric.mod.json'
+    }
 
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 

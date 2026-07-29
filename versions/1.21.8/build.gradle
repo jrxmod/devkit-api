@@ -1,0 +1,5 @@
+plugins {
+    id 'net.fabricmc.fabric-loom-remap' version "${loom_version}" apply false
+}
+
+apply from: file('../shared-build.gradle')

@@ -1,7 +1,3 @@
-plugins {
-    id 'net.fabricmc.fabric-loom-remap' version "${loom_version}" apply false
-}
-
 allprojects {
     group = rootProject.property('maven_group')
     version = rootProject.property('mod_version')
@@ -16,6 +12,10 @@ subprojects {
     apply plugin: 'net.fabricmc.fabric-loom-remap'
     apply plugin: 'java-library'
     apply plugin: 'maven-publish'
+
+    // Keep outputs from the different Minecraft builds isolated even though
+    // all variants read the same module directories from the repository root.
+    layout.buildDirectory = rootProject.layout.buildDirectory.dir(project.name)
 
     loom {
         splitEnvironmentSourceSets()
@@ -34,6 +34,52 @@ subprojects {
         modImplementation "net.fabricmc.fabric-api:fabric-api:${rootProject.property('fabric_version')}"
     }
 
+    // A variant starts with the shared module source tree. Files in its
+    // overrides directory are copied first and replace files with the same
+    // relative path. An optional *.excludes file can remove a shared file when
+    // it has moved between the common and client source sets.
+    ['main', 'client'].each { sourceSetName ->
+        def sourceSet = sourceSets.named(sourceSetName)
+        def overrideRoot = rootProject.file("overrides/${project.name}/src/${sourceSetName}")
+
+        ['java', 'resources'].each { kind ->
+            def sharedDirectory = project.file("src/${sourceSetName}/${kind}")
+            def overrideDirectory = new File(overrideRoot, kind)
+            def exclusionsFile = new File(overrideRoot, "${kind}.excludes")
+            def outputDirectory = rootProject.layout.buildDirectory.dir(
+                    "generated/${project.name}/${sourceSetName}/${kind}")
+            def taskName = "prepare${sourceSetName.capitalize()}${kind.capitalize()}"
+
+            def prepareTask = tasks.register(taskName, Sync) {
+                into outputDirectory
+                duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+                // Variant files win when they share a relative path.
+                from(overrideDirectory)
+                from(sharedDirectory) {
+                    if (exclusionsFile.isFile()) {
+                        exclusionsFile.readLines('UTF-8')
+                                .collect { it.trim() }
+                                .findAll { !it.isEmpty() && !it.startsWith('#') }
+                                .each { exclude it }
+                    }
+                }
+            }
+
+            if (kind == 'java') {
+                sourceSet.configure { java.setSrcDirs([outputDirectory]) }
+                tasks.named(sourceSetName == 'main' ? 'compileJava' : 'compileClientJava') {
+                    dependsOn prepareTask
+                }
+            } else {
+                sourceSet.configure { resources.setSrcDirs([outputDirectory]) }
+                tasks.named(sourceSetName == 'main' ? 'processResources' : 'processClientResources') {
+                    dependsOn prepareTask
+                }
+            }
+        }
+    }
+
     processResources {
         inputs.property 'version', project.version
         inputs.property 'minecraft_version', rootProject.property('minecraft_version')
@@ -50,6 +96,11 @@ subprojects {
         withSourcesJar()
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
+    }
+
+    tasks.named('sourcesJar') {
+        dependsOn 'prepareMainJava', 'prepareMainResources',
+                'prepareClientJava', 'prepareClientResources'
     }
 
     tasks.withType(JavaCompile).configureEach {
@@ -90,21 +141,15 @@ subprojects {
 }
 
 project(':devkit-registry') {
-    dependencies {
-        api project(':devkit-core')
-    }
+    dependencies { api project(':devkit-core') }
 }
 
 project(':devkit-networking') {
-    dependencies {
-        api project(':devkit-core')
-    }
+    dependencies { api project(':devkit-core') }
 }
 
 project(':devkit-components') {
-    dependencies {
-        api project(':devkit-core')
-    }
+    dependencies { api project(':devkit-core') }
 }
 
 project(':devkit-config') {
@@ -138,52 +183,5 @@ project(':devkit-fabric') {
         api project(':devkit-config')
         api project(':devkit-client')
         api project(':devkit-datagen')
-    }
-}
-
-// Convenience tasks keep all supported Minecraft builds on one Git branch.
-tasks.register('buildMinecraft1211') {
-    group = 'build'
-    description = 'Builds DevKit API for Minecraft 1.21.1.'
-    dependsOn subprojects.collect { it.tasks.named('build') }
-}
-
-tasks.register('buildMinecraft1218', GradleBuild) {
-    group = 'build'
-    description = 'Builds DevKit API for Minecraft 1.21.8.'
-    dir = file('versions/1.21.8')
-    tasks = ['build']
-}
-
-tasks.register('buildMinecraft12111', GradleBuild) {
-    group = 'build'
-    description = 'Builds DevKit API for Minecraft 1.21.11.'
-    dir = file('versions/1.21.11')
-    tasks = ['build']
-}
-
-tasks.register('buildAllVersions') {
-    group = 'build'
-    description = 'Builds all supported Minecraft 1.21.x artifacts.'
-    dependsOn 'buildMinecraft1211', 'buildMinecraft1218', 'buildMinecraft12111'
-}
-
-tasks.register('collectReleaseJars', Copy) {
-    group = 'distribution'
-    description = 'Collects the three all-in-one JARs under build/releases.'
-    dependsOn 'buildAllVersions'
-    into layout.buildDirectory.dir('releases')
-
-    from('devkit-fabric/build/libs') {
-        include 'devkit-api-*.jar'
-        exclude '*-sources.jar'
-    }
-    from('versions/1.21.8/build/devkit-fabric/libs') {
-        include 'devkit-api-*.jar'
-        exclude '*-sources.jar'
-    }
-    from('versions/1.21.11/build/devkit-fabric/libs') {
-        include 'devkit-api-*.jar'
-        exclude '*-sources.jar'
     }
 }

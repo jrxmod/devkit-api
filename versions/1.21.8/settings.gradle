@@ -1,0 +1,28 @@
+pluginManagement {
+    repositories {
+        maven {
+            name = 'Fabric'
+            url = 'https://maven.fabricmc.net/'
+        }
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+rootProject.name = 'devkit-api-1.21.8'
+
+def repositoryRoot = file('../..')
+[
+    'devkit-core',
+    'devkit-registry',
+    'devkit-networking',
+    'devkit-components',
+    'devkit-config',
+    'devkit-datagen',
+    'devkit-client',
+    'devkit-fabric',
+    'devkit-testmod-example'
+].each { moduleName ->
+    include moduleName
+    project(":${moduleName}").projectDir = new File(repositoryRoot, moduleName)
+}

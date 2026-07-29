@@ -98,7 +98,7 @@ public final class AutoPacketRegistry {
                 if (direction.allowsClientToServer()) {
                     PayloadTypeRegistry.playC2S().register(id, codec);
                     ServerPlayNetworking.registerGlobalReceiver(id, (payload, context) ->
-                            payload.handle(new ServerNetworkContext(context.player())));
+                            payload.handle(new ServerNetworkContext(context.player(), context.server())));
                 }
 
                 PacketEntry<T> entry = new PacketEntry<>(packetClass, id, direction);
@@ -172,9 +172,12 @@ public final class AutoPacketRegistry {
             AutoPacket.Direction direction
     ) {}
 
-    private record ServerNetworkContext(ServerPlayerEntity player) implements SyncedPacket.NetworkContext {
+    private record ServerNetworkContext(
+            ServerPlayerEntity player,
+            net.minecraft.server.MinecraftServer server
+    ) implements SyncedPacket.NetworkContext {
         @Override public boolean isClient() { return false; }
         @Override public net.minecraft.entity.player.PlayerEntity getPlayer() { return player; }
-        @Override public void queue(Runnable task) { player.getServer().execute(task); }
+        @Override public void queue(Runnable task) { server.execute(task); }
     }
 }

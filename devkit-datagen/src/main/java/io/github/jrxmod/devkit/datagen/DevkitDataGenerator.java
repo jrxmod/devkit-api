@@ -8,7 +8,7 @@ import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
  * Default datagen entrypoint for the {@code devkit-api} aggregator mod.
  * <p>
  * The library itself does not generate any data – it only provides
- * helpers ({@link LootHelper}, {@link ModelGen}, {@link TagHelper}) for
+ * helpers ({@link LootHelper}, {@code ModelGen}, {@link TagHelper}) for
  * dependent mods. This entrypoint is registered so that the build
  * pipeline validates the datagen classpath successfully. Dependent
  * mods should create their own entrypoint that extends

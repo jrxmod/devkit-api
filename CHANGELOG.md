@@ -4,12 +4,19 @@ All notable changes to DevKit API are documented here.
 
 ## [Unreleased]
 
-### Target
+### Target matrix
 
-- Development version: `0.2.0-alpha.1+1.21.1`
-- Minecraft 1.21.1
-- Java 21
-- Fabric Loader 0.19.3
+- DevKit `0.2.0-alpha.1+1.21.1` — Minecraft 1.21.1, Fabric API 0.116.13
+- DevKit `0.2.0-alpha.1+1.21.8` — Minecraft 1.21.8, Fabric API 0.136.1
+- DevKit `0.2.0-alpha.1+1.21.11` — Minecraft 1.21.11, Fabric API 0.141.5
+- Java 21 and Fabric Loader 0.19.3 for all targets
+
+### Added
+
+- Added independent 1.21.8 and 1.21.11 Gradle builds without creating Git branches.
+- Added version overlays for registry-key-aware items and the client datagen API introduced in later 1.21.x versions.
+- Added `KRegister.register(path, key -> value)` so factories can apply the exact `RegistryKey` before constructing blocks and items.
+- Added a three-version GitHub Actions matrix and local `buildAllVersions` / `collectReleaseJars` tasks.
 
 ### Restored
 
@@ -30,13 +37,11 @@ All notable changes to DevKit API are documented here.
 - Replaced the null-returning loot placeholder with a usable block loot provider base.
 - Removed empty mixin declarations and the non-functional automated publishing workflow.
 - Updated documentation to describe only APIs that exist.
-- Added production client/server smoke-test tasks; both remapped environments start successfully on 1.21.1.
+- Added production client/server smoke-test tasks; remapped environments start successfully on 1.21.1, 1.21.8, and 1.21.11.
 
 ### Known work before beta
 
 - Verify config synchronization over a live client/server connection.
-- Add the Minecraft 1.21.11 build.
-- Add the Minecraft 26.2 / Java 25 port.
 - Configure public Maven, Modrinth, and CurseForge publishing only after release destinations exist.
 
 ## [0.1.0-alpha] - 2026-07-08
