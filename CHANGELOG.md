@@ -2,13 +2,13 @@
 
 All notable changes to DevKit API are documented here.
 
-## [Unreleased]
+## [0.2.0-alpha.2] - 2026-08-08
 
 ### Target matrix
 
-- DevKit `0.2.0-alpha.1+1.21.1` — Minecraft 1.21.1, Fabric API 0.116.13
-- DevKit `0.2.0-alpha.1+1.21.8` — Minecraft 1.21.8, Fabric API 0.136.1
-- DevKit `0.2.0-alpha.1+1.21.11` — Minecraft 1.21.11, Fabric API 0.141.5
+- DevKit `0.2.0-alpha.2+1.21.1` — Minecraft 1.21.1, Fabric API 0.116.13
+- DevKit `0.2.0-alpha.2+1.21.8` — Minecraft 1.21.8, Fabric API 0.136.1
+- DevKit `0.2.0-alpha.2+1.21.11` — Minecraft 1.21.11, Fabric API 0.141.5
 - Java 21 and Fabric Loader 0.19.3 for all targets
 
 ### Added

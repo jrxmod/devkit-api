@@ -2,7 +2,7 @@
 
 **DevKit API** by **jrxmod** is a small developer library for Fabric mods. It does not add gameplay content by itself.
 
-> Current development release: `0.2.0-alpha.1` for Minecraft 1.21.x.
+> Current development release: `0.2.0-alpha.2` for Minecraft 1.21.x.
 >
 > Java 21 · Fabric Loader 0.19.3 · Apache-2.0
 
@@ -12,9 +12,9 @@ DevKit is built as three separate JARs from one `main` branch:
 
 | Minecraft | Artifact |
 |---|---|
-| 1.21.1 LTS | `devkit-api-0.2.0-alpha.1+1.21.1.jar` |
-| 1.21.8 | `devkit-api-0.2.0-alpha.1+1.21.8.jar` |
-| 1.21.11 | `devkit-api-0.2.0-alpha.1+1.21.11.jar` |
+| 1.21.1 LTS | `devkit-api-0.2.0-alpha.2+1.21.1.jar` |
+| 1.21.8 | `devkit-api-0.2.0-alpha.2+1.21.8.jar` |
+| 1.21.11 | `devkit-api-0.2.0-alpha.2+1.21.11.jar` |
 
 A player or dependent mod should use exactly the JAR matching its Minecraft version. There is no 26.x target planned.
 
@@ -43,11 +43,11 @@ repositories {
 
 dependencies {
     // Minecraft 1.21.1
-    modImplementation "maven.modrinth:devkitapi:0.2.0-alpha.1+1.21.1"
+    modImplementation "maven.modrinth:devkitapi:0.2.0-alpha.2+1.21.1"
     // Minecraft 1.21.8
-    modImplementation "maven.modrinth:devkitapi:0.2.0-alpha.1+1.21.8"
+    modImplementation "maven.modrinth:devkitapi:0.2.0-alpha.2+1.21.8"
     // Minecraft 1.21.11
-    modImplementation "maven.modrinth:devkitapi:0.2.0-alpha.1+1.21.11"
+    modImplementation "maven.modrinth:devkitapi:0.2.0-alpha.2+1.21.11"
 }
 ```
 
@@ -78,7 +78,7 @@ repositories {
 }
 
 dependencies {
-    modImplementation "io.github.jrxmod.devkit:devkit-fabric:0.2.0-alpha.1+1.21.8"
+    modImplementation "io.github.jrxmod.devkit:devkit-fabric:0.2.0-alpha.2+1.21.8"
 }
 ```
 
