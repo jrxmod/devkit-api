@@ -6,6 +6,7 @@ import io.github.jrxmod.devkit.core.DevkitCore;
 import io.github.jrxmod.devkit.networking.AutoPacket;
 import io.github.jrxmod.devkit.networking.AutoPacketRegistry;
 import io.github.jrxmod.devkit.networking.DevkitNetworking;
+import io.github.jrxmod.devkit.networking.NetworkCompat;
 import io.github.jrxmod.devkit.networking.SyncedPacket;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.network.RegistryByteBuf;
@@ -49,10 +50,15 @@ public final class ConfigSyncManager {
 
         AutoPacketRegistry.register(ConfigSyncPacket.class, AutoPacket.Direction.S2C);
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            boolean sent = false;
             for (Holder<?> holder : REGISTRY.values()) {
                 if (holder.serverAuthoritative()) {
                     sendTo(handler.player, holder);
+                    sent = true;
                 }
+            }
+            if (sent) {
+                NetworkCompat.reconfigureIfAvailable(handler.player);
             }
         });
         initialized = true;

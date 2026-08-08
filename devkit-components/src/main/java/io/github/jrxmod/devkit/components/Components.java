@@ -1,6 +1,7 @@
 package io.github.jrxmod.devkit.components;
 
 import com.mojang.serialization.Codec;
+import io.github.jrxmod.devkit.core.DevkitCore;
 import net.minecraft.component.ComponentType;
 import net.minecraft.network.RegistryByteBuf;
 import net.minecraft.network.codec.PacketCodec;
@@ -48,13 +49,15 @@ public final class Components {
     }
 
     /**
-     * @deprecated Use {@link #intComponent(String, String)} to avoid
-     *             unregistered identifiers in production code.
+     * Convenience builder for integer components using {@link DevkitCore#MOD_ID}
+     * as the default namespace. Prefer {@link #intComponent(String, String)}
+     * when the component belongs to a dependent mod.
+     *
+     * @param path component path
+     * @return integer component builder
      */
-    @Deprecated
     public static ComponentBuilder<Integer> intComponent(String path) {
-        return new ComponentBuilder<>(null, Codec.INT)
-                .networked(PacketCodecs.VAR_INT);
+        return intComponent(DevkitCore.MOD_ID, path);
     }
 
     /**

@@ -69,6 +69,36 @@ public final class ConfigManager {
     }
 
     /**
+     * Reloads a configuration from disk, returning a fresh instance.
+     * The caller decides when to replace the live reference.
+     * A malformed file is left untouched and the method returns a default
+     * in-memory instance.
+     */
+    public static <T> T reload(Class<T> clazz, String modId, String name) {
+        Objects.requireNonNull(clazz, "clazz");
+        Path path = pathFor(modId, name);
+        try {
+            if (Files.isRegularFile(path)) {
+                T instance = GSON.fromJson(Files.readString(path, StandardCharsets.UTF_8), clazz);
+                if (instance == null) throw new IOException("GSON returned null");
+                maybeRegisterSync(instance, clazz, name);
+                DevkitCore.LOGGER.debug("Reloaded configuration: {}", path);
+                return instance;
+            }
+            DevkitCore.LOGGER.warn("Configuration file not found for reload, creating default: {}", path);
+            T instance = newInstance(clazz);
+            save(instance, path);
+            maybeRegisterSync(instance, clazz, name);
+            return instance;
+        } catch (Exception e) {
+            DevkitCore.LOGGER.error("Configuration reload failed: {}. Using in-memory defaults.", path, e);
+            T fallback = newInstance(clazz);
+            maybeRegisterSync(fallback, clazz, name);
+            return fallback;
+        }
+    }
+
+    /**
      * Atomically persists a configuration object where the filesystem permits.
      *
      * @param object configuration instance

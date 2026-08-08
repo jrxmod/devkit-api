@@ -16,7 +16,22 @@ All notable changes to DevKit API are documented here.
 - Added independent 1.21.8 and 1.21.11 Gradle builds without creating Git branches.
 - Added version overlays for registry-key-aware items and the client datagen API introduced in later 1.21.x versions.
 - Added `KRegister.register(path, key -> value)` so factories can apply the exact `RegistryKey` before constructing blocks and items.
+- Added `ItemSettings` and `BlockSettings` — version-resilient fluent builders that produce the same registration code on 1.21.1, 1.21.8, and 1.21.11 through internal `ItemFactory` / `BlockFactory` overrides.
+- Added `DevkitCommands` — thin Brigadier wrappers providing auto-registration, player unwrap, and `ok()`/`okBroadcast()` feedback shortcuts.
+- Added `ConfigManager.reload(Class, modId, name)` to reread a config file without restarting.
+- Added TestMod `/devkit_test energy`, `/devkit_test set <value>`, and `/devkit_test reload` commands to exercise networking, config save, and config reload at runtime.
+- Added Modrinth Maven coordinates to README alongside the existing Maven Local instructions.
 - Added a three-version GitHub Actions matrix and local `buildAllVersions` / `collectReleaseJars` tasks.
+
+### Fixed
+
+- Fixed ModMenu library badge format: replaced the non-functional `modmenu:badges` flat key with the standard nested `"modmenu": { "badges": ["library"] }` object.
+- Replaced the deprecated `Components.intComponent(String)` null-id overload with a safe variant that defaults to the DevKit namespace.
+- Wired `NetworkCompat.reconfigureIfAvailable()` into `ConfigSyncManager` so that client configuration is applied after server-authoritative configs are sent.
+
+### Removed
+
+- Removed TestMod version overrides for 1.21.8 and 1.21.11; `ItemSettings` makes the base file universal.
 
 ### Restored
 

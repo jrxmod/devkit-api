@@ -25,6 +25,8 @@
   },
   "custom": {
     "devkit:api_version": 2,
-    "modmenu:badges": ["library"]
+    "modmenu": {
+      "badges": ["library"]
+    }
   }
 }
